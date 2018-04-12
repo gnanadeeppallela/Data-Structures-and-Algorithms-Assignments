@@ -1,0 +1,216 @@
+#include <iostream>
+#include <iomanip>
+#include <mpir.h>
+#include <stdlib.h>
+#include <string.h>
+
+using namespace std;
+
+const int MAX_ITERATIONS = 6;
+const int PLACES = 1000;        // desired decimal places
+const int PRECISION = PLACES + 1;  // +1 for the digit 3 before the decimal
+
+const int BASE = 10;  // base 10 numbers
+const int BIT_COUNT = 8;   // bits per machine word
+
+const int BLOCK_SIZE = 10;                // print digits in blocks
+const int LINE_SIZE = 100;               // digits to print per line
+const int LINE_COUNT = PLACES / LINE_SIZE;  // lines to print
+const int GROUP_SIZE = 5;                 // line grouping size
+
+/***** Function declarations here. *****/
+void print(const mpf_t& pi);
+
+/**
+ * The main.
+ * Set constants, initialize variables, and iterate
+ * to compute pi to the desired number of decimal places.
+ */
+
+int main()
+{
+
+	/***** Complete this program. *****/
+
+	int start_s = clock(); // the start the clock
+
+
+	mpf_set_default_prec(BIT_COUNT * PRECISION);  // precision in bits
+
+	mpf_t a, y, root2, operation2, pos0, init1, init2, init3;
+	mpf_inits(a);
+	mpf_init(y);
+	mpf_init(operation2);
+	mpf_init(root2);
+
+	//to compute a0
+	mpf_set_d(operation2, 2);
+	mpf_sqrt(root2, operation2);
+
+	mpf_init(pos0);
+	mpf_init(init1);
+	mpf_init(init2);
+
+	mpf_set_d(init1, 6);
+	mpf_set_d(init2, 4);
+
+	mpf_mul(pos0, init2, root2);
+	mpf_sub(a, init1, pos0);
+
+	//to compute y0
+	mpf_init(init3);
+
+	mpf_set_d(init3, 1);
+
+	mpf_sub(y, root2, init3);
+
+	// Loop MAX_ITERATIONS times.
+	for (int i = 1; i <= MAX_ITERATIONS; i++)
+	{
+		mpf_t sq4th, yout, sqrt4th, s4th, yout2, sq4th2, yout3, sqrt4th2, s4th2, yout4;
+
+		//to compute 4th power for numerator
+		mpf_init(sq4th);
+
+		mpf_pow_ui(sq4th, y, 4);
+
+		mpf_init(yout);
+
+		mpf_sub(yout, init3, sq4th);
+
+		//to compute 4th square root for numerator
+		mpf_init(sqrt4th);
+
+		mpf_init(s4th);
+
+		mpf_sqrt(s4th, yout);
+		mpf_sqrt(sqrt4th, s4th);
+
+		mpf_init(yout2);
+		mpf_sub(yout2, init3, sqrt4th);
+
+		//to compute 4th power for denominator
+		mpf_init(sq4th2);
+
+		mpf_pow_ui(sq4th2, y, 4);
+
+		mpf_init(yout3);
+
+		mpf_sub(yout3, init3, sq4th2);
+
+		//to compute 4th square root for denominator
+		mpf_init(sqrt4th2);
+
+		mpf_init(s4th2);
+
+		mpf_sqrt(s4th2, yout3);
+		mpf_sqrt(sqrt4th2, s4th2);
+
+		mpf_init(yout4);
+		mpf_add(yout4, init3, sqrt4th2);
+
+		//divide numerator and denominator to get y
+		mpf_div(y, yout2, yout4);
+
+		mpf_t out1, out2, out3, out4, out5, out6, out7, out8, out9, out10, pos1, pos2, a1, a2;
+
+		mpf_init(out1);
+		mpf_init(out2);
+		mpf_init(out3);
+		mpf_init(out4);
+		mpf_init(out5);
+		mpf_init(out6);
+		mpf_init(out7);
+		mpf_init(out8);
+		mpf_init(out9);
+		mpf_init(out10);
+		mpf_init(pos1);
+		mpf_init(pos2);
+		mpf_init(a1);
+		mpf_init(a2);
+
+		//computation of second part of a
+		mpf_add(out1, init3, y);
+
+		mpf_pow_ui(out2, y, 2);
+		mpf_add(out3, out1, out2);
+		mpf_mul(out4, out3, y);
+
+		mpf_set_d(out9, 2);
+		mpf_pow_ui(out10, out9, 2 * i + 1);
+		mpf_mul(a2, out10, out4);
+
+		//computation of first part of a
+		mpf_add(pos1, init3, y);
+		mpf_pow_ui(pos2, pos1, 4);
+		mpf_mul(a1, a, pos2);
+
+		//to compute a we get 1/pi
+		mpf_sub(a, a1, a2);
+	}
+
+	//to compute pi
+	mpf_t pi;
+	mpf_init(pi);
+
+	mpf_div(pi, init3, a);
+
+	print(pi);
+
+	int stop_s = clock(); //to stop the clock
+
+	cout << "\n\n";
+
+	//computation time
+	//cout << "time: " << (stop_s-start_s)/double(CLOCKS_PER_SEC)*1000 << endl;
+	return 0;
+}
+
+/***** Function definitions. *****/
+void print(const mpf_t& pi)
+{
+	mp_exp_t exponent;
+	char *strr, *strr2;
+	strr = mpf_get_str(NULL, &exponent, 10, PRECISION + 1, pi);
+	strr2 = mpf_get_str(NULL, &exponent, 10, PRECISION + 1, pi);
+
+	strr2[0] = strr[0];
+
+	for (int i = 1; i < PRECISION; i++)
+	{
+		strr2[i + 1] = strr[i];
+		strr2[1] = '.';
+	}
+
+	int B = BLOCK_SIZE;
+	int L = LINE_SIZE;
+	int G = GROUP_SIZE * LINE_SIZE;
+
+	for (int j = 0; j <= PRECISION; j++)
+	{
+		//Block size for 10 decimal values
+		if (j == B + 2)
+		{
+			cout << " ";
+			B = B + 10;
+		}
+
+		//Line size for 100 decimal values
+		if (j == L + 2)
+		{
+			cout << "\n  ";
+			L = L + 100;
+		}
+
+		//Group size for 500 decimal values
+		if (j == G + 2)
+		{
+			cout << "\n";
+			cout << "  ";
+			G = G + 500;
+		}
+
+		//Final output
+		cout << strr2[j];
+	}
+}
